@@ -1,7 +1,12 @@
+//Libraries
 #include <WiFi.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 // Declaring class
 WiFiClient client;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
 
 //Wifi network name and passwd
 const char * networkName = "IRLab";
@@ -16,14 +21,17 @@ const int DOOR_PIN = 33;
 const int ALARM_PIN = 32;
 const int LED_PIN = 2;
 
-// Const message
-const char ON_MSG[] = "ON";
-const char OFF_MSG[] = "OFF";
+// Const variable
+const int timeOffset = -7*3600; // Denver time
+const int endDayHour = 17;
+const int startDayHour = 7;
+
 
 // Variable
 int state;
-char msg[20];
 bool waitTime;
+int currentHour;
+int currentDay;
 
 void setup() {
   // Setup Serial command
@@ -36,25 +44,35 @@ void setup() {
   // connect to wifi
   connectToWiFi(networkName, networkPswd);
   
-  // connect to server
-  connectToServer(host, port);
+  // Start client time
+  timeClient.begin();
+
+  // Set it to Mountain Time
+  //timeClient.setTimeOffset(timeOffset);
 }
 
 void loop() {
-  // Get message from server
-  readMsg(msg);
+  // Get current time
+  currentHour = getHour();
+  currentDay  = getDays();
+
   // Dertermine if its off hours
-  if (strcmp(msg, ON_MSG) == 0 ) {
+  if (currentHour >= endDayHour || currentHour <= startDayHour || currentDay == 6 || currentDay == 0) {
+    Serial.println("Off Working Hours");
     // Check to see if the state of the door has changed
     state = digitalRead(DOOR_PIN);
     waitTime = true;
+    Serial.println(state);
     while(state) {
       if (waitTime){
-        delay(30000);
+        delay(10000);
+        Serial.println("Waittime");
         waitTime = false;
         state = digitalRead(DOOR_PIN);
+        Serial.println(state);
         if (!state) {
-           break;
+          Serial.println("Break");
+          break;
         }
       }
       digitalWrite(ALARM_PIN, HIGH);
@@ -67,12 +85,33 @@ void loop() {
 
   // Otherwise wait 15 min
   else {
+    Serial.println("Working Hours");
     delay(60000);
     delay(60000);
     delay(60000);
     delay(60000);
     delay(60000);
   }
+}
+
+int getDays() {
+  // Get Current time
+  while(!timeClient.update()) {
+    timeClient.forceUpdate();
+  }
+
+  // Extract Hour
+  return timeClient.getDay();
+}
+
+int getHour() {
+  // Get Current time
+  while(!timeClient.update()) {
+    timeClient.forceUpdate();
+  }
+
+  // Extract Hour
+  return timeClient.getHours();
 }
 
 //Function to read messages from Server

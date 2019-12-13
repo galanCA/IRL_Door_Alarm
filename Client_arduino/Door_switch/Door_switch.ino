@@ -5,8 +5,8 @@ int state;
 bool waitTime;
 
 void setup() {
-
   Serial.begin(115200);
+  
   pinMode(DOOR_PIN, INPUT_PULLUP);
   pinMode(ALARM_PIN, OUTPUT);
     
@@ -14,10 +14,13 @@ void setup() {
 
 void loop() {
   state = digitalRead(DOOR_PIN);
+  Serial.println(state);
+  
   waitTime = true;
   while(state) {
+    Serial.println();
     if (waitTime){
-      delay(15000);
+      delay(10000);
       waitTime = false;
       state = digitalRead(DOOR_PIN);
       if (!state) {
@@ -30,4 +33,5 @@ void loop() {
     delay(150);
     state = digitalRead(DOOR_PIN);
   }
+
 }

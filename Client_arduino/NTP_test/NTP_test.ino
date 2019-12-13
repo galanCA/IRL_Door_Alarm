@@ -13,9 +13,12 @@ const char * networkPswd = "robots4ever";
 const int LED_PIN = 2;
 
 // Variables to save date and time
+String formattedDay;
 String formattedDate;
+String formattedHour;
 String dayStamp;
 String timeStamp;
+String hourStamp;
 
 void setup() {
   // Setup Serial command
@@ -37,7 +40,9 @@ void loop() {
   // 2018-05-28T16:00:13Z
   // We need to extract date and time
   formattedDate = timeClient.getFormattedDate();
-  Serial.println(formattedDate);
+  formattedDay = timeClient.getDay();
+  formattedHour = timeClient.getHours();
+  Serial.println(formattedDay + " " + "Hour" + formattedHour+ formattedDate);
 
   // Extract date
   int splitT = formattedDate.indexOf("T");
@@ -48,6 +53,17 @@ void loop() {
   timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
   Serial.print("HOUR: ");
   Serial.println(timeStamp);
+  // Extract hour
+  hourStamp = formattedDate.substring(splitT+1,splitT+3);
+  Serial.print(hourStamp);
+  if (hourStamp.toInt() > 16 || hourStamp.toInt() < 07) {
+    Serial.println(" Off Hours");
+  }
+
+  else {
+    Serial.println(" On Hours");
+  }
+  
   delay(1000);
 }
 
@@ -74,7 +90,8 @@ void connectToWiFi(const char * ssid, const char * pwd) {
   // Show credentials after connected to WiFi
   Serial.println();
   Serial.println("WiFi connected!");
-  Serial.println("IP address: " + String(WiFi.localIP()));
+  Serial.print("IP address: ");
+  Serial.println(String(WiFi.localIP()));
   }
 
 // Function to show a line
